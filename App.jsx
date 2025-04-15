@@ -1,7 +1,9 @@
-import React from 'react';
-import {ScrollView, StyleSheet,  Text, View, Image, ImageBackground, TextInput, Pressable} from 'react-native';
+import React, { useState } from 'react';
+import {ScrollView, StyleSheet,  Text, View, Image, ImageBackground, TextInput, Pressable, TouchableOpacity, FlatList} from 'react-native';
 import {Element3, Receipt21, Clock, Message, SearchNormal} from 'iconsax-react-native';
-import { fontType, colors, imgList } from './src/theme';
+import { fontType, colors} from './src/theme';
+import { CategoryList, BlogList } from './src/data';
+import { ListNews} from './src/components';
 
 export default function App() {
   return (
@@ -20,26 +22,7 @@ export default function App() {
       </View>
       <View style={styles.listCategory}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{...category.item, marginLeft: 24}}>
-            <Element3 color={colors.black()} variant="Linear" size={55} />
-           <Text style={category.title}>All</Text>
-          </View>
-          <View style={category.item}>
-            {imgList.Konosuba(55,55,15)}            
-              <Text style={category.title}>Anime</Text>
-          </View>
-          <View style={category.item}>
-            {imgList.Dungeon(55,55,15)}            
-              <Text style={category.title}>Manga</Text>
-          </View>
-          <View style={category.item}>
-            {imgList.Ado(55,55,15)}            
-              <Text style={category.title}>Music</Text>
-          </View>
-          <View style={{...category.item, marginRight: 24}}>
-            {imgList.JiraiKei(55,55,15)}            
-              <Text style={category.title}>Fashion</Text>
-          </View>
+          <FlatListCategory/>
         </ScrollView>
       </View>
       <View style={{marginTop:3, paddingHorizontal:24}}>
@@ -87,7 +70,6 @@ const category = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.grey(0.2),
     marginHorizontal:5,
-    
   },
   title: {
     fontFamily: fontType['NS-default'],
@@ -97,8 +79,11 @@ const category = StyleSheet.create({
     color: colors.black(),
     marginTop: 5,
   },
-  image: {
-    
+  imageCard:{
+    resizeMode: 'contain',
+    width:55,
+    height:55,
+    borderRadius:10,
   }
 });
 const searchBar = StyleSheet.create({
@@ -127,48 +112,6 @@ const searchBar = StyleSheet.create({
     borderBottomRightRadius: 10,
   },
 });
-
-const ListBlog = () => {
-  return (
-    <View style={itemList.container}>
-      <ScrollView>
-        <View style={{...itemList.cardBody, marginTop:0}}>
-        <ImageBackground
-        source={require('./src/assets/images/AdoConcert.png')}
-        style={itemList.cardImage}>
-          <View style={itemList.cardShadow}></View>
-          <Text style={itemList.cardText}>ADO HAS ANNOUNCED HER UPCOMING WORLD TOUR, ADO WORLD TOUR 2025 'HIBANA'</Text>
-        </ImageBackground>
-        </View>
-        <View style={itemList.cardBody}>
-        <ImageBackground
-         source={require('./src/assets/images/konosuba.png')}
-         style={itemList.cardImage}>
-          <View style={itemList.cardShadow}></View>
-          <Text style={itemList.cardText}>KONOSUBA SEASON 3 WILL HAVE TWO OVA EPISODES</Text>
-        </ImageBackground>
-        </View>
-        <View style={itemList.cardBody}>
-        <ImageBackground
-         source={require('./src/assets/images/JiraiKei.jpeg')}
-         style={itemList.cardImage}>
-          <View style={itemList.cardShadow}></View>
-          <Text style={itemList.cardText}>JIRAI KEI BECOME POPULAR WORLDWIDE</Text>
-        </ImageBackground>
-        </View>
-        <View style={itemList.cardBody}>
-        <ImageBackground
-         source={require('./src/assets/images/delidungeon.jpeg')}
-         style={itemList.cardImage}>
-          <View style={itemList.cardShadow}></View>
-          <Text style={itemList.cardText}>DELICIOUS IN DUNGEON WIN MANGA AWARD</Text>
-        </ImageBackground>
-        </View>
-      </ScrollView>
-  </View>
-  );
-}
-
 const itemList = StyleSheet.create({
   container: {
     paddingHorizontal: 24,
@@ -213,3 +156,51 @@ const itemList = StyleSheet.create({
     backgroundColor: 'black'
   }
 });
+
+const ListBlog = () => {
+  return (
+    <View style={itemList.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ListNews data={BlogList}/>
+      </ScrollView>
+  </View>
+  );
+}
+
+const ItemCategory = ({item, onPress, color}) => {
+  return (
+    <TouchableOpacity onPress={onPress}>
+      <View style={category.item}>
+        <Image
+        source={item.image}
+        style={category.imageCard}/>
+        <Text style={{...category.title, color}}>{item.categoryName}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const FlatListCategory = () => {
+  const [selected, setSelected] = useState(1);
+  const renderItem = ({item}) => {
+    const color = item.id === selected ? colors.vividPink() : colors.grey();
+    return (
+      <ItemCategory
+        item={item}
+        onPress={() => setSelected(item.id)}
+        color={color}
+      />
+    );
+  };
+  return (
+    <FlatList
+      data={CategoryList}
+      keyExtractor={item => item.id}
+      renderItem={item => renderItem({...item})}
+      ItemSeparatorComponent={() => <View style={{width: 10}} />}
+      contentContainerStyle={{paddingHorizontal: 24}}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+    />
+  );
+};
