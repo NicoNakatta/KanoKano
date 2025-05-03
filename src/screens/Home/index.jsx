@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import {ScrollView, StyleSheet,  Text, View, Image, ImageBackground, TextInput, Pressable, TouchableOpacity, FlatList} from 'react-native';
-import {Element3, Receipt21, Clock, Message, SearchNormal} from 'iconsax-react-native';
+import {ScrollView, StyleSheet,  Text, View, Image, TextInput, Pressable, TouchableOpacity, FlatList} from 'react-native';
+import {SearchNormal} from 'iconsax-react-native';
+import {useNavigation} from '@react-navigation/native';
 import { fontType, colors} from '../../theme';
 import { CategoryList, BlogList } from '../../data';
 import { ListNews} from '../../components';

@@ -1,17 +1,18 @@
 import {StyleSheet, Text, View, FlatList, TouchableOpacity, ImageBackground} from 'react-native';
 import React, {useState} from 'react';
-import {Receipt21} from 'iconsax-react-native';
+import {useNavigation} from '@react-navigation/native';
 import { fontType, colors } from '../theme';
 
 const ItemNews = ({item}) => {
+  const navigation = useNavigation();
     return (
-        <View style={itemList.cardBody}>
+        <TouchableOpacity style={itemList.cardBody} onPress={() => navigation.navigate('News', {blogId: item.id})}>
             <ImageBackground
             source={item.image} style={itemList.cardImage}>
                 <View style={itemList.cardShadow}></View>
                 <Text style={itemList.cardText}>{item.title}</Text>
             </ImageBackground>
-        </View>
+        </TouchableOpacity>
     );
   };
 
