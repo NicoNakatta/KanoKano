@@ -1,84 +1,77 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View, Image, TextInput, Pressable, TouchableOpacity, FlatList, Animated, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {ScrollView,StyleSheet,Text,View,TextInput,Pressable,TouchableOpacity,FlatList,ImageBackground,ActivityIndicator,Image,Animated,
+} from 'react-native';
 import { SearchNormal } from 'iconsax-react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { fontType, colors } from '../../theme';
-import { CategoryList, BlogList } from '../../data';
-import { ListNews, apiNews } from '../../components';
-import axios from 'axios';
+import { CategoryList } from '../../data';
+import { collection, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
 export default function Home() {
-  // status untuk menandakan apakah terjadi loading/tidak
-  const [loading, setLoading] = useState(true);
-  // state blod data untuk menyimpan list (array) dari blog
   const [news, setNews] = useState([]);
-  // status untuk menyimpan status refreshing
-  const [refreshing, setRefreshing] = useState(false);
-
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
-  const getNews = async () => {
-    setLoading(true);
-    try {
-      // ambil data dari API dengan metode GET
-      const response = await axios.get(
-        'https://682308e4b342dce800505ef6.mockapi.io/api/news',
-      );
-      // atur state blogData sesuai dengan data yang
-      // di dapatkan dari API
-      setNews(response.data);
-      // atur loading menjadi false
+  const getNews = () => {
+    const db = getFirestore();
+    const blogRef = collection(db, 'blog');
+
+    const unsubscribe = onSnapshot(blogRef, (querySnapshot) => {
+      const newsData = [];
+      querySnapshot.forEach((doc) => {
+        newsData.push({ id: doc.id, ...doc.data() });
+      });
+      setNews(newsData);
       setLoading(false);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    });
+
+    return () => unsubscribe(); // Cleanup listener
   };
 
   useEffect(() => {
     getNews();
-    console.log(news);
-
   }, []);
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     getNews();
-  //   }, [])
-  // );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>KanoKano</Text>
       </View>
+
       <View style={searchBar.container}>
-        <TextInput
-          style={searchBar.input}
-          placeholder="Search"
-        />
+        <TextInput style={searchBar.input} placeholder="Search" />
         <Pressable style={searchBar.button}>
           <SearchNormal size={25} color={colors.white()} />
         </Pressable>
       </View>
+
       <View style={styles.listCategory}>
         <FlatListCategory />
-        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        </ScrollView> */}
       </View>
+
       <View style={{ marginTop: 3, paddingHorizontal: 24 }}>
         <Text style={itemList.title}>Berita Terkini</Text>
       </View>
 
-      <ScrollView style={{padding: 20}}>
-        {loading ? <Text>Loading Content...</Text> : news.map((item, index) => <TouchableOpacity key={index} style={itemList.cardBody} onPress={() => navigation.navigate('News', { blogId: item.id })}>
-          <ImageBackground
-            source={{uri: item.image}} style={itemList.cardImage}>
-            <View style={itemList.cardShadow}></View>
-            <Text style={itemList.cardText}>{item.title}</Text>
-          </ImageBackground>
-        </TouchableOpacity>)}
+      <ScrollView style={{ padding: 20 }}>
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.vividPink()} />
+        ) : news.length > 0 ? (
+          news.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={itemList.cardBody}
+              onPress={() => navigation.navigate('News', { blogId: item.id })}
+            >
+              <ImageBackground source={{ uri: item.image }} style={itemList.cardImage}>
+                <View style={itemList.cardShadow}></View>
+                <Text style={itemList.cardText}>{item.title}</Text>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>No news available.</Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -97,7 +90,7 @@ const styles = StyleSheet.create({
     height: 52,
     elevation: 8,
     paddingTop: 11,
-    paddingBottom: 4
+    paddingBottom: 4,
   },
   title: {
     fontSize: 35,
@@ -107,41 +100,8 @@ const styles = StyleSheet.create({
   listCategory: {
     paddingVertical: 10,
   },
-  listBlog: {
-    paddingVertical: 10,
-    gap: 10,
-  },
 });
-const category = StyleSheet.create({
-  borderItem: {
-    marginHorizontal: 5,
-    borderRadius: 25,
-    backgroundColor: colors.vividPink(0.1),
-  },
-  item: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    paddingBottom: 5,
-    borderRadius: 25,
-    alignItems: 'center',
-    backgroundColor: colors.pink(0),
-    // marginHorizontal:5,
-  },
-  title: {
-    fontFamily: fontType['NS-default'],
-    fontWeight: 'bold',
-    fontSize: 14,
-    lineHeight: 18,
-    color: colors.black(),
-    marginTop: 5,
-  },
-  imageCard: {
-    resizeMode: 'contain',
-    width: 55,
-    height: 55,
-    borderRadius: 10,
-  }
-});
+
 const searchBar = StyleSheet.create({
   container: {
     marginHorizontal: 24,
@@ -168,15 +128,8 @@ const searchBar = StyleSheet.create({
     borderBottomRightRadius: 10,
   },
 });
+
 const itemList = StyleSheet.create({
-  container: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    gap: 15,
-    flex: 1,
-    borderRadius: 20,
-    // backgroundColor: colors.vividPink(),
-  },
   title: {
     fontSize: 24,
     fontFamily: fontType['NS-default'],
@@ -189,7 +142,7 @@ const itemList = StyleSheet.create({
     height: 200,
     marginTop: 10,
     borderRadius: 20,
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   cardImage: {
     resizeMode: 'cover',
@@ -198,34 +151,53 @@ const itemList = StyleSheet.create({
     borderRadius: 20,
   },
   cardText: {
-    textAlign: "center",
+    textAlign: 'center',
     color: colors.white(),
     fontSize: 24,
     margin: 7,
-    // top:7,
   },
   cardShadow: {
     opacity: 0.4,
     top: '50%',
     width: '100%',
     height: 100,
-    backgroundColor: 'black'
-  }
+    backgroundColor: 'black',
+  },
 });
 
-// const ListBlog = () => {
-//   return (
-//     <View style={itemList.container}>
-//       <ScrollView showsVerticalScrollIndicator={false}>
-//         {/* <ListNews data={BlogList}/> */}
-
-//       </ScrollView>
-//     </View>
-//   );
-// }
+const category = StyleSheet.create({
+  borderItem: {
+    marginHorizontal: 5,
+    borderRadius: 25,
+    backgroundColor: colors.vividPink(0.1),
+  },
+  item: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingBottom: 5,
+    borderRadius: 25,
+    alignItems: 'center',
+    backgroundColor: colors.pink(0),
+  },
+  title: {
+    fontFamily: fontType['NS-default'],
+    fontWeight: 'bold',
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.black(),
+    marginTop: 5,
+  },
+  imageCard: {
+    resizeMode: 'contain',
+    width: 55,
+    height: 55,
+    borderRadius: 10,
+  },
+});
 
 const ItemCategory = ({ item, onPress, color }) => {
   const borderAnim = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -241,22 +213,22 @@ const ItemCategory = ({ item, onPress, color }) => {
         }),
       ])
     ).start();
-  }, [borderAnim]);
+  }, []);
+
   return (
     <TouchableOpacity onPress={onPress}>
-      <Animated.View style={[
-        category.borderItem,
-        {
-          borderLeftWidth: borderAnim,
-          borderRightWidth: borderAnim,
-          borderColor: colors.vividPink(0.8), // pink/cute
-        },
-      ]}
+      <Animated.View
+        style={[
+          category.borderItem,
+          {
+            borderLeftWidth: borderAnim,
+            borderRightWidth: borderAnim,
+            borderColor: colors.vividPink(0.8),
+          },
+        ]}
       >
         <View style={category.item}>
-          <Image
-            source={item.image}
-            style={category.imageCard} />
+          <Image source={item.image} style={category.imageCard} />
           <Text style={{ ...category.title, color }}>{item.categoryName}</Text>
         </View>
       </Animated.View>
@@ -268,19 +240,14 @@ const FlatListCategory = () => {
   const [selected, setSelected] = useState(1);
   const renderItem = ({ item }) => {
     const color = item.id === selected ? colors.black() : colors.darkPink();
-    return (
-      <ItemCategory
-        item={item}
-        onPress={() => setSelected(item.id)}
-        color={color}
-      />
-    );
+    return <ItemCategory item={item} onPress={() => setSelected(item.id)} color={color} />;
   };
+
   return (
     <FlatList
       data={CategoryList}
-      keyExtractor={item => item.id}
-      renderItem={item => renderItem({ ...item })}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
       ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
       contentContainerStyle={{ paddingHorizontal: 24 }}
       horizontal
