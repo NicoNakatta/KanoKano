@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView, StyleSheet, Text, View, Image, TextInput, Pressable, TouchableOpacity, search,
   Alert,
@@ -10,15 +10,36 @@ import { BlogList } from '../../data';
 import axios from 'axios';
 import Home from '../Home';
 
-export default function NewAnews() {
+export default function EditNews({route}) {
+      const { blogId } = route.params;
+  const [selectedBlog, setSelectedBlog] = useState({});
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(false);
+
+  const fetchDetail = async () => {
+    setLoading(true);
+    try {
+
+      const response = await axios.get(`https://682308e4b342dce800505ef6.mockapi.io/api/news/${blogId}`);
+      setSelectedBlog(response.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+    useEffect(() => {
+        getBlogById();
+    }, [blogId]);
+
   const [formData, setFormData] = useState({
     title: '',
     genre: '',
     news: '',
     image: '',
   });
+
   const handleChange = (name, value) => {
     setFormData({
       ...formData,
@@ -33,8 +54,8 @@ export default function NewAnews() {
     }
     setLoading(true);
     try {
-      // gunakan metode POST untuk menambahkan blog baru
-      const response = await axios.post('https://682308e4b342dce800505ef6.mockapi.io/api/news', {
+      // gunakan metode put untuk update data
+      const response = await axios.put(`https://682308e4b342dce800505ef6.mockapi.io/api/news/${blogId}`, {
         title: formData.title,
         genre: formData.genre,
         image: formData.image,
@@ -42,10 +63,10 @@ export default function NewAnews() {
         date: new Date(),
       });
       // jika status response 201 (Created) "Sukses"
-      if (response.status == 201) {
+      if (response.status == 200) {
         // kembali ke layar home
         Alert.alert('Berhasil Mengunggah Berita');
-        navigation.navigate('Home');
+        navigation.goBack();
       }
     } catch (e) {
       // tampilkan error
@@ -54,6 +75,28 @@ export default function NewAnews() {
       setLoading(false);
     }
   };
+  
+  const getBlogById = async () => {
+        setLoading(true);
+        try {
+            // ambil data blog berdasarkan ID dengan metode GET 
+            const response = await axios.get(
+                `https://682308e4b342dce800505ef6.mockapi.io/api/news/${blogId}`,
+            );
+            // atur state blog data menjadi data blog yang di dapatkan 
+            // dari response API
+            setFormData({
+                title: response.data.title,
+                genre: response.data.genre,
+                image: response.data.image,
+                news: response.data.news,
+            })
+            setLoading(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
 
   return (
     <View style={styles.container}>
@@ -61,7 +104,7 @@ export default function NewAnews() {
         <Back color={colors.black()} variant="Linear" size={24} />
       </View>
       <View style={styles.header}>
-        <Text style={styles.title}>Create New Article</Text>
+        <Text style={styles.title}>Edit Title</Text>
       </View>
       <View style={styles.listBlog}>
         <Text style={styles.title2}>Title</Text>

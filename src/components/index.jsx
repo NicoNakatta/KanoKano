@@ -1,2 +1,3 @@
 import ListNews from './listNews'
-export {ListNews}
+import apiNews from './apiNews'
+export {ListNews, apiNews}
